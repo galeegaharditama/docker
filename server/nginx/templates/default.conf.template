@@ -20,13 +20,81 @@ server {
 
     location ~ \.php$ {
         root           /www;
+        fastcgi_pass   php56-fpm:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+
+    #API-SFA
+    location /api/sfa {
+        alias /www/api-sfa/web;
+        index index.php;
+        try_files $uri $uri/ @api/sfa;
+    
+        location ~ \.php$ {
+            fastcgi_pass php56-fpm:9000;
+            include         fastcgi_params;
+            fastcgi_param   SCRIPT_FILENAME    $request_filename;
+            fastcgi_param   SCRIPT_NAME        $fastcgi_script_name;
+        }
+    }
+
+    location @api/sfa {
+        rewrite /api/sfa/(.*)$ /api/sfa/index.php?/$1 last;
+    }
+    #location ~ /\.ht {      
+    #    deny  all;          
+    #}                       
+}
+
+#php 7
+server {
+    listen       8080;
+    server_name  _;
+
+    location / {
+        root   /www;
+        try_files $uri $uri/ /index.php?$args;
+        index index.php index.html;
+    }
+
+    error_page  404 /404.html;
+    location = /404.html {
+        root   /www/error-pages;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /www/error-pages;
+    }
+
+    location ~ \.php$ {
+        root           /www;
         fastcgi_pass   php-fpm:9000;
         fastcgi_index  index.php;
         fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;
         include        fastcgi_params;
     }
 
-    #location ~ /\.ht {      
-    #    deny  all;          
-    #}                       
+    #API-SFA
+    location /api/sfa {
+        alias /www/api-sfa/web;
+        index index.php;
+        try_files $uri $uri/ @api/sfa;
+    
+        location ~ \.php$ {
+            fastcgi_pass php-fpm:9000;
+            include         fastcgi_params;
+            fastcgi_param   SCRIPT_FILENAME    $request_filename;
+            fastcgi_param   SCRIPT_NAME        $fastcgi_script_name;
+        }
+    }
+
+    location @api/sfa {
+        rewrite /api/sfa/(.*)$ /api/sfa/index.php?/$1 last;
+    }
+    #location ~ /\.ht {
+    #    deny  all;
+    #}
 }
